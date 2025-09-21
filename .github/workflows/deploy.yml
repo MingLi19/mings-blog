@@ -1,0 +1,61 @@
+name: Deploy Hugo site to GitHub Pages
+
+permissions:
+  contents: write # allow pushing to gh-pages
+  pages: read # not strictly needed for gh-pages branch push, but harmless
+  id-token: write # future-proofing if switching to GitHub Pages Deploy API
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: pages-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 0
+
+      - name: Setup Go (for Hugo Modules)
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      - name: Cache Hugo & Go Modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/hugo_mod
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-hugomod-${{ hashFiles('**/go.sum') }}
+          restore-keys: ${{ runner.os }}-hugomod-
+
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v3
+        with:
+          hugo-version: "latest"
+          extended: true
+
+      - name: Tidy Hugo Modules
+        run: hugo mod tidy
+
+      - name: Build Hugo site
+        run: hugo --minify
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public
+          publish_branch: gh-pages
+          commit_message: "Deploy: ${{ github.sha }}"
+          enable_jekyll: false

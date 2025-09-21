@@ -1,0 +1,10 @@
+ [module]
+	# Set your own module path if you 'hugo mod init' (optional)
+	# uncomment below and replace if you want a fixed path
+	# path = "github.com/MingLi19/mings-blog"
+
+	# Force direct to avoid GOPROXY issues in CI (optional)
+	# proxy = "direct"
+
+	[[module.imports]]
+		path = "github.com/nunocoracao/blowfish"
